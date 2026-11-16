@@ -1,0 +1,9 @@
+data/
+Dataset/
+models/
+*.keras
+*.h5
+kaggle.json
+__pycache__/
+.ipynb_checkpoints/
+venv/

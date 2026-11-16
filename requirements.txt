@@ -1,0 +1,9 @@
+tensorflow>=2.15
+numpy
+matplotlib
+seaborn
+scikit-learn
+opencv-python-headless
+gradio
+kaggle
+pandas
