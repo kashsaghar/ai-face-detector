@@ -22,5 +22,9 @@ MODELS_DIR = os.path.join(PROJECT_ROOT, "models")
 FIGURES_DIR = os.path.join(PROJECT_ROOT, "outputs", "figures")
 METRICS_DIR = os.path.join(PROJECT_ROOT, "outputs", "metrics")
 
-for _dir in (MODELS_DIR, FIGURES_DIR, METRICS_DIR):
+# Per-epoch training state (optimizer, epoch number) used by BackupAndRestore so a
+# crashed/disconnected run can resume from the last completed epoch instead of restarting.
+BACKUP_DIR = os.path.join(MODELS_DIR, "backup")
+
+for _dir in (MODELS_DIR, FIGURES_DIR, METRICS_DIR, BACKUP_DIR):
     os.makedirs(_dir, exist_ok=True)

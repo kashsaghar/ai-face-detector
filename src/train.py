@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 
 from src.config import (
+    BACKUP_DIR,
     CNN_IMG_SIZE,
     EPOCHS_CNN,
     EPOCHS_TL_FINETUNE,
@@ -21,7 +22,16 @@ from src.models import build_cnn, build_mobilenet, unfreeze_mobilenet_top
 tf.random.set_seed(SEED)
 
 
-def make_callbacks(name):
+def make_callbacks(name, stage=None):
+    """Callbacks for one `model.fit()` call.
+
+    `stage` names this fit call for BackupAndRestore (e.g. "head"/"finetune" for the
+    two MobileNetV2 stages) so resuming one stage never picks up another stage's
+    epoch/optimizer state. Re-running the same training command after a crash or a
+    disconnect resumes from the last completed epoch automatically; `{name}_last.keras`
+    is also saved every epoch as a plain, independently loadable fallback.
+    """
+    backup_dir = os.path.join(BACKUP_DIR, name if stage is None else f"{name}_{stage}")
     return [
         tf.keras.callbacks.EarlyStopping(
             monitor="val_loss", patience=3, restore_best_weights=True
@@ -31,6 +41,11 @@ def make_callbacks(name):
             monitor="val_loss",
             save_best_only=True,
         ),
+        tf.keras.callbacks.ModelCheckpoint(
+            os.path.join(MODELS_DIR, f"{name}_last.keras"),
+            save_best_only=False,
+        ),
+        tf.keras.callbacks.BackupAndRestore(backup_dir=backup_dir),
         tf.keras.callbacks.ReduceLROnPlateau(factor=0.5, patience=2),
         tf.keras.callbacks.CSVLogger(
             os.path.join(METRICS_DIR, f"{name}_history.csv"), append=True
@@ -74,7 +89,7 @@ def train_cnn(epochs=None):
         train_ds,
         validation_data=val_ds,
         epochs=epochs or EPOCHS_CNN,
-        callbacks=make_callbacks("cnn"),
+        callbacks=make_callbacks("cnn", stage="main"),
     )
     plot_curves([history.history], "cnn")
 
@@ -88,7 +103,7 @@ def train_mobilenet(epochs_head=None, epochs_finetune=None):
         train_ds,
         validation_data=val_ds,
         epochs=epochs_head or EPOCHS_TL_HEAD,
-        callbacks=make_callbacks("mobilenet"),
+        callbacks=make_callbacks("mobilenet", stage="head"),
     )
 
     model = unfreeze_mobilenet_top(model, n_layers=30)
@@ -106,7 +121,7 @@ def train_mobilenet(epochs_head=None, epochs_finetune=None):
         train_ds,
         validation_data=val_ds,
         epochs=epochs_finetune or EPOCHS_TL_FINETUNE,
-        callbacks=make_callbacks("mobilenet"),
+        callbacks=make_callbacks("mobilenet", stage="finetune"),
     )
 
     plot_curves([history_head.history, history_finetune.history], "mobilenet")
