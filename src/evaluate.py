@@ -23,12 +23,14 @@ MODEL_PATH = {
 
 
 def _collect_predictions(model, test_ds):
+    # Images are stored as uint8 (not the default float32) -- 4x less RAM across a
+    # 20k-image test set, since pixel values are already plain 0-255 integers here.
     y_true, y_prob, images = [], [], []
     for x, y in test_ds:
         p = model.predict(x, verbose=0).flatten()
         y_true.append(y.numpy().flatten())
         y_prob.append(p)
-        images.append(x.numpy())
+        images.append(x.numpy().astype(np.uint8))
     y_true = np.concatenate(y_true)
     y_prob = np.concatenate(y_prob)
     images = np.concatenate(images)

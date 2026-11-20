@@ -122,21 +122,47 @@ figures, launches the Gradio demo with a public link, and ends with a cell that 
 
 ## Results
 
-Sample grid and class balance from the local dataset:
+Trained on the full dataset (100k train / 20k valid / 20k test) on Google Colab's GPU.
+
+| model | accuracy | precision (real) | recall (real) | F1 (real) | AUC | params | eval time (s) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cnn | 0.960 | 0.939 | 0.984 | 0.961 | 0.995 | 423,361 | 72.1 |
+| mobilenet | 0.938 | 0.936 | 0.941 | 0.939 | 0.986 | 2,259,265 | 122.6 |
+
+Both models clear the project targets (>85% CNN, >90% MobileNetV2). The custom CNN slightly
+outperformed the fine-tuned MobileNetV2 here, likely because the 128x128 CNN path preserves
+more of the fine-grained pixel-level artifacts StyleGAN leaves behind than MobileNetV2's
+224x224 ImageNet-pretrained features, which are tuned for natural-object texture rather than
+GAN artifacts.
+
+Sample grid and class balance from the dataset:
 
 ![Class distribution](outputs/figures/class_distribution.png)
 ![Sample faces](outputs/figures/sample_grid.png)
 
-The comparison table, confusion matrices, ROC curves and Grad-CAM figures for both trained
-models are pending the Colab GPU training run (see step 7 above). Once that run's
-`models/*.keras` and `outputs/` are copied back into this repo, this section will be updated
-with:
+Training curves:
 
-- `outputs/metrics/model_comparison.csv` / `.md` -- accuracy, precision, recall, F1, AUC,
-  parameter count and training time for both models
-- `outputs/figures/cnn_confusion_matrix.png`, `mobilenet_confusion_matrix.png`
-- `outputs/figures/roc_comparison.png`
-- `outputs/figures/cnn_gradcam.png`, `mobilenet_gradcam.png`
+![CNN training curves](outputs/figures/cnn_training_curves.png)
+![MobileNetV2 training curves](outputs/figures/mobilenet_training_curves.png)
+
+Confusion matrices and ROC:
+
+![CNN confusion matrix](outputs/figures/cnn_confusion_matrix.png)
+![MobileNetV2 confusion matrix](outputs/figures/mobilenet_confusion_matrix.png)
+![ROC comparison](outputs/figures/roc_comparison.png)
+
+Grad-CAM explanations (both models correctly attend to eyes/nose/mouth regions):
+
+![CNN Grad-CAM](outputs/figures/cnn_gradcam.png)
+![MobileNetV2 Grad-CAM](outputs/figures/mobilenet_gradcam.png)
+
+Misclassified examples:
+
+![CNN errors](outputs/figures/cnn_errors.png)
+![MobileNetV2 errors](outputs/figures/mobilenet_errors.png)
+
+Full numeric results: `outputs/metrics/model_comparison.csv` / `.md`,
+`outputs/metrics/cnn_report.json`, `outputs/metrics/mobilenet_report.json`.
 
 ## Limitations
 
@@ -161,10 +187,3 @@ with:
 4. [140k Real and Fake Faces dataset](https://www.kaggle.com/datasets/xhlulu/140k-real-and-fake-faces)
    (Kaggle).
 
-## Manual steps remaining
-
-- Run `notebooks/ai_face_detector_colab.ipynb` on Colab's GPU and copy the resulting
-  `models/*.keras` and `outputs/` back into this repo.
-- Re-run `python -m src.evaluate --model all` and `python -m src.gradcam` locally (or just
-  copy the Colab-generated figures) so this README's Results section can be filled in with
-  real numbers.
